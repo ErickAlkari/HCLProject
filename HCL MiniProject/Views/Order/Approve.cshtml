@@ -1,0 +1,71 @@
+﻿@model List<HCL_MiniProject.Models.OrderModels>
+@{
+    ViewBag.Title = Resources.Approve.Tittle;
+}
+
+<h2>@Resources.Approve.Containt</h2>
+
+@using(Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="table-responsive">
+        <table id="finishedTable" class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">
+                        @Resources.Approve.IdClient
+                    </th>
+                    <th scope="col">
+                        @Resources.Approve.IdOrder
+                    </th>
+                    <th scope="col">
+                        @Resources.Approve.ResourceName
+                    </th>
+                    <th scope="col">
+                        @Resources.Approve.ModifiedDate
+                    </th>
+                    <th scope="col">
+                        @Resources.Approve.AcceptOrder
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            @Html.HiddenFor(modelItem => Model[i].IdClient)
+                            @Html.DisplayFor(modelItem => Model[i].PartitionKey)
+                        </td>
+                        <td>
+                            @Html.HiddenFor(modelItem => Model[i].IdOrder)
+                            @Html.DisplayFor(modelItem => Model[i].RowKey)
+                        </td>
+                        <td>
+                            @Html.HiddenFor(modelItem => Model[i].ResourceName)
+                            @Html.HiddenFor(modelItem => Model[i].ResourceURL)
+                            <a href="@Model[i].ResourceURL">@Model[i].ResourceName</a>
+                        </td>
+                        <td>
+                            @Html.HiddenFor(modelItem => Model[i].ModificationDate)
+                            @Html.DisplayFor(modelItem => Model[i].ModificationDate)
+                        </td>
+                        <td>
+                            <div class="checkbox">
+                                @Html.EditorFor(modelItem => Model[i].isAcepted)
+                                @Html.ValidationMessageFor(modelItem => Model[i].isAcepted, "", new { @class = "text-danger" })
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <br />
+    <div class="form-group" style="width:100%;height:100%;text-align:center; vertical-align:middle">
+        <input type="submit" value="@(Resources.Approve.Save)" class="btn btn-default" />
+    </div>
+}

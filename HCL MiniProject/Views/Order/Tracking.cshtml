@@ -1,0 +1,102 @@
+﻿@{
+    ViewBag.Title = Resources._Layout.Trace;
+}
+
+<br />
+
+@{
+    if (ViewBag.MessageFail != null && ViewBag.MessageFail == true)
+    {
+        @Html.Raw("<div class=\"row\" align=\"center\">" +
+                    "<div class=\"alert alert-danger alert-dismissible\" role=\"alert\" id=\"alert_EmptyGrid\">" +
+                        Resources.Order.ErrorMessage +
+                        "<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">" +
+                            "<span aria-hidden=\"true\">&times;</span>" +
+                        "</button>" +
+                    "</div>" +
+                "</div>");
+    }   
+}
+
+@using (Html.BeginForm("Tracking", "Order", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            <div class="col-lg-offset-2 col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading"><h2 class="panel-title">@Resources.Order.Panel_Title</h2></div>
+                    <div class="panel-body">
+
+                        <div class="form-group">
+                            <div class="col-md-10 col-md-offset-1">
+                                <label for="inputdefault">@Resources.Order.ClientId</label>
+                                <input class="form-control" name="idClient" id="idClient" type="text">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-10 col-md-offset-1">
+                                <label for="inputdefault">@Resources.Order.OrderId</label>
+                                <input class="form-control" name="IdOrder" id="IdOrder" type="text">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="@Resources.Order.Button_Submit" class="btn btn-default" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<br />
+
+<div class="table-responsive">
+    <table id="finishedTable" class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">
+                    @Resources.Order.Trace_ResourceName
+                </th>
+                <th scope="col">
+                    @Resources.Order.Trace_ModifiedDate
+                </th>
+                <th scope="col">
+                    @Resources.Order.Trace_IsAccepted
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                List<HCL_MiniProject.Models.OrderModels> orders = (List<HCL_MiniProject.Models.OrderModels>)ViewBag.Orders;
+            }
+            @foreach (var item in orders)
+            {
+                <tr>
+                    <td>
+                        <a href="@item.ResourceURL">@item.ResourceName</a>
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ModificationDate)
+                    </td>
+                    <td>
+                        @if (item.isAcepted)
+                        {
+                            @Html.ActionLink(Resources.Order.Trace_Pay, "Pay", "Order", new { @class = "btn btn-success" })
+                        }
+                        else
+                        {
+                            @Html.Raw(Resources.Order.Trace_Pending)
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

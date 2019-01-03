@@ -1,0 +1,67 @@
+﻿@{
+    ViewBag.Title = Resources.Home.Title;
+}
+
+<br />
+
+@{
+    if (ViewBag.Process != null && ViewBag.Process == "true")
+    {
+        @Html.Raw("<div class=\"row\" align=\"center\">" +
+                    "<div class=\"alert alert-success alert-dismissible\" role=\"alert\" id=\"alert_EmptyGrid\">" +
+                        Resources.Home.SuccessProcess + " " + ViewBag.Id +
+                        "<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">" +
+                            "<span aria-hidden=\"true\">&times;</span>" +
+                        "</button>" +
+                    "</div>" +
+                "</div>");
+    }
+    if (ViewBag.Process != null && ViewBag.Process == "false")
+    {
+        @Html.Raw("<div class=\"row\" align=\"center\">" +
+                    "<div class=\"alert alert-danger alert-dismissible\" role=\"alert\" id=\"alert_EmptyGrid\">" +
+                        Resources.Home.ErrorProcess +
+                        "<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">" +
+                            "<span aria-hidden=\"true\">&times;</span>" +
+                        "</button>" +
+                    "</div>" +
+                "</div>");
+    }
+}
+
+@using (Html.BeginForm("Create", "Order", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            <div class="col-lg-offset-2 col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading"><h2 class="panel-title">@Resources.Home.Panel_Title</h2></div>
+                    <div class="panel-body">
+
+                        <div class="form-group">
+                            <div class="col-md-10 col-md-offset-1">
+                                <label for="inputdefault">@Resources.Home.ClientId</label>
+                                <input class="form-control" name="idClient" id="idClient" type="text">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-10 col-md-offset-1">
+                                <b>@Resources.Home.File_Button_Label</b>
+                                <input type="file" class="custom-file-input" name="postedFile">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-5 col-md-2">
+                                <input type="submit" value="@Resources.Home.Button_Submit" class="btn btn-default" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
