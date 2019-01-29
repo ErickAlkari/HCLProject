@@ -70,6 +70,15 @@ namespace Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Approve.
+        /// </summary>
+        public static string Approve {
+            get {
+                return ResourceManager.GetString("Approve", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Contact.
         /// </summary>
         public static string Contact {

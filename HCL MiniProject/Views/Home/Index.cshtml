@@ -1,9 +1,11 @@
-﻿@{
+﻿@*This is the default view, if we receive data in the viewbag, which means that previously we try to upload a new order and there is the result of the operation, otherwise only shows the form for upload a new order.*@
+@{
     ViewBag.Title = Resources.Home.Title;
 }
 
 <br />
 
+@*Validate if is data in the viewbag, if exist data then show the result in a panel.*@
 @{
     if (ViewBag.Process != null && ViewBag.Process == "true")
     {
@@ -29,6 +31,7 @@
     }
 }
 
+@*Panel with a form for upload a new order. Two fields are required, the id of the client, and the file that correspond to the quotation*@
 @using (Html.BeginForm("Create", "Order", FormMethod.Post, new { enctype = "multipart/form-data" }))
 {
     @Html.AntiForgeryToken()

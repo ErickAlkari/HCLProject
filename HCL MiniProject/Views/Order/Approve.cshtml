@@ -5,6 +5,7 @@
 
 <h2>@Resources.Approve.Containt</h2>
 
+@*Form for send to the controller the objects that we are approving*@
 @using(Html.BeginForm())
 {
     @Html.AntiForgeryToken()
@@ -52,6 +53,7 @@
                             @Html.HiddenFor(modelItem => Model[i].ModificationDate)
                             @Html.DisplayFor(modelItem => Model[i].ModificationDate)
                         </td>
+                        @**Checking this textbox, we are approving an order for be attended*@
                         <td>
                             <div class="checkbox">
                                 @Html.EditorFor(modelItem => Model[i].isAcepted)

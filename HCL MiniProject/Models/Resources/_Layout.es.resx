@@ -120,6 +120,9 @@
   <data name="About" xml:space="preserve">
     <value>Acerca de</value>
   </data>
+  <data name="Approve" xml:space="preserve">
+    <value>Aprobar</value>
+  </data>
   <data name="Contact" xml:space="preserve">
     <value>Contacto</value>
   </data>

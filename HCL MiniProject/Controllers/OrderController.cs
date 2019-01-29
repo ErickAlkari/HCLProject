@@ -13,53 +13,120 @@ namespace HCL_MiniProject.Controllers
 {
     public class OrderController : Controller
     {
-        // GET: Order
-        public ActionResult Index()
+        // POST: Order/Create
+        /// <summary>
+        /// Create a new order in the table storage
+        /// </summary>
+        /// <param name="idClient">Id of the clients who the order belongs</param>
+        /// <param name="postedFile">File that correspond to the quotation</param>
+        /// <returns>Redirect to the view, if the operation is ok, then will return in the viewbag a tracking id, otherwise will show a error message</returns>
+        [HttpPost]
+        public ActionResult Create(string idClient, HttpPostedFileBase postedFile)
         {
-            return View();
+            try
+            {
+                //Create and save the new order in the table storage
+                OrderModels order = new OrderModels(idClient, Guid.NewGuid().ToString());
+                order.ResourceName = postedFile.FileName;
+                order.ModificationDate = DateTime.UtcNow;
+                order.ResourceURL = order.saveInBlob(postedFile.InputStream, order.RowKey);
+                order.saveEntity();
+
+                //Save as result of the operation "true"
+                ViewBag.Process = true;
+
+                // TODO: Add insert logic here
+                return RedirectToAction("Index", "Home", new { result = "true", idOrder = order.RowKey.ToString() });
+            }
+            catch
+            {
+                //If the operation fail the we return and error, and the view will show an error message
+                ViewBag.Process = false;
+                return RedirectToAction("Index", "Home", new { result = "false" });
+            }
         }
 
-        // GET: Order/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
-        // GET: Order/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
+        /// <summary>
+        /// View for get a list of orders to approve
+        /// </summary>
+        /// <returns>View approve with data of the orders to approve in the viewbag</returns>
         public ActionResult Approve()
         {
-            List<OrderModels> orders = GetPartitionsToApprove();
+            List<OrderModels> orders = ExecuteQuery(null, null, "GetPartitionsToApprove");
             return View(orders);
         }
 
+        /// <summary>
+        /// If there is orders approved save the new status of the orders in the table storage
+        /// </summary>
+        /// <param name="orders">List with the orders that can be approved</param>
+        /// <returns>View Approve, with the list of orders to approve</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Approve(List<OrderModels> orders)
         {
             try {
-                foreach (OrderModels order in orders)
+                //Check if the order is approved and save the new status
+                foreach (OrderModels order in orders.Where(m=>m.isAcepted))
                 {
-                    if (order.isAcepted)
-                    {
-                        order.PartitionKey = order.IdClient;
-                        order.RowKey = order.IdOrder;
-                        order.ETag = "*";
-                        UpdatePartitionsToApprove(order);
-                    }
+                    order.PartitionKey = order.IdClient;
+                    order.RowKey = order.IdOrder;
+                    order.ETag = "*";
+                    UpdatePartitionsToApprove(order);
                 }
             }
             catch { 
             }
 
-            List<OrderModels> nOrders = GetPartitionsToApprove();
+            //Get orders that are not approved yet
+            List<OrderModels> nOrders = ExecuteQuery(null, null, "GetPartitionsToApprove");
             return View(nOrders);
         }
 
+        /// <summary>
+        /// View for tracking to orders
+        /// </summary>
+        /// <returns>View tracking</returns>
+        public ActionResult Tracking()
+        {
+            ViewBag.Orders = new List<OrderModels>();
+            return View();
+        }
+
+        /// <summary>
+        /// Retrive the data of one order
+        /// </summary>
+        /// <param name="idClient">Id of the client who the order belongs</param>
+        /// <param name="IdOrder">Id of the order to track</param>
+        /// <returns>If the order exist, the return the data of the order, otherwise return a error message</returns>
+        [HttpPost]
+        public ActionResult Tracking(string idClient, string IdOrder)
+        {
+            try {
+                List<OrderModels> orders = ExecuteQuery(idClient, IdOrder, "GetPartitionsSearch");
+                ViewBag.Orders = orders;
+                return View();
+            }
+            catch {
+                ViewBag.MessageFail = true;
+                return View();
+            }
+        }
+
+        /// <summary>
+        /// Is not implemented yet, so the method just redirect to the main page
+        /// </summary>
+        /// <param name="id">The id of the order to proceed to pay</param>
+        /// <returns></returns>
+        public ActionResult Pay(string id)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        /// <summary>
+        /// Given and entity of type "OrderModels" we replace the existing data of the entity in the storage table.
+        /// </summary>
+        /// <param name="om">Entity that will be replaced in the table</param>
         private void UpdatePartitionsToApprove(OrderModels om)
         {
             // Retrieve the storage account from the connection string.
@@ -71,13 +138,21 @@ namespace HCL_MiniProject.Controllers
             // Create the CloudTable object that represents the "people" table.
             CloudTable table = tableClient.GetTableReference(ConfigurationManager.AppSettings["tableStorageOrders"]);
 
+            //Replace the older regitry with the new data
             var operation = TableOperation.Replace(om);
 
             // Loop through the results, displaying information about the entity.
             table.Execute(operation);
         }
 
-        private List<OrderModels> GetPartitionsToApprove()
+        /// <summary>
+        /// Execute a query for retrive data from storage tables
+        /// </summary>
+        /// <param name="IdClient">Id of client who made the request</param>
+        /// <param name="IdOrder">Id of the order to track</param>
+        /// <param name="kindOfQuery">Name of the query to execuete</param>
+        /// <returns></returns>
+        private List<OrderModels> ExecuteQuery(string IdClient, string IdOrder, string kindOfQuery)
         {
             // Retrieve the storage account from the connection string.
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("storageConnectionString"));
@@ -89,129 +164,29 @@ namespace HCL_MiniProject.Controllers
             CloudTable table = tableClient.GetTableReference(ConfigurationManager.AppSettings["tableStorageOrders"]);
 
             // Create the table query.
-            TableQuery<OrderModels> rangeQuery = new TableQuery<OrderModels>().Where(TableQuery.GenerateFilterConditionForBool("isAcepted", QueryComparisons.Equal, false));
+            TableQuery<OrderModels> rangeQuery = null;
 
-            // Loop through the results, displaying information about the entity.
-            List<OrderModels> Orders = table.ExecuteQuery(rangeQuery).ToList();
-
-            return Orders;
-        }
-
-        public ActionResult Pay(string id)
-        {
-            return RedirectToAction("Index","Home");
-        }
-
-        public ActionResult Tracking()
-        {
-            ViewBag.Orders = new List<OrderModels>();
-            return View();
-        }
-
-        [HttpPost]
-        public ActionResult Tracking(string idClient, string IdOrder)
-        {
-            try {
-                List<OrderModels> orders = GetPartitionsSearch(idClient, IdOrder);
-                ViewBag.Orders = orders;
-                return View();
-            }
-            catch {
-                ViewBag.MessageFail = true;
-                return View();
-            }
-        }
-
-        private List<OrderModels> GetPartitionsSearch(string IdClient, string IdOrder)
-        {
-            // Retrieve the storage account from the connection string.
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("storageConnectionString"));
-
-            // Create the table client.
-            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
-
-            // Create the CloudTable object that represents the "people" table.
-            CloudTable table = tableClient.GetTableReference(ConfigurationManager.AppSettings["tableStorageOrders"]);
-
-            // Create the table query.
-            TableQuery<OrderModels> rangeQuery = new TableQuery<OrderModels>().Where(
+            //Get order information
+            if (kindOfQuery == "GetPartitionsSearch")
+            {
+                rangeQuery = new TableQuery<OrderModels>().Where(
                 TableQuery.CombineFilters(
                     TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, IdClient),
                     TableOperators.And,
                     TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, IdOrder)));
+            }
+            //Get all orders that aren't approved
+            else if (kindOfQuery == "GetPartitionsToApprove")
+            {
+                rangeQuery = new TableQuery<OrderModels>().Where(
+                TableQuery.GenerateFilterConditionForBool("isAcepted", QueryComparisons.Equal, false));
+            }
+            
 
             // Loop through the results, displaying information about the entity.
             List<OrderModels> Orders = table.ExecuteQuery(rangeQuery).ToList();
 
             return Orders;
-        }
-
-        // POST: Order/Create
-        [HttpPost]
-        public ActionResult Create(string idClient, HttpPostedFileBase postedFile)
-        {
-            try
-            {
-                OrderModels order = new OrderModels(idClient, Guid.NewGuid().ToString());
-                order.ResourceName = postedFile.FileName;
-                order.ModificationDate = DateTime.UtcNow;
-                order.ResourceURL = order.saveInBlob(postedFile.InputStream, order.RowKey);
-                order.saveEntity();
-
-                ViewBag.Process = true;
-
-                // TODO: Add insert logic here
-                return RedirectToAction("Index", "Home", new { result = "true", idOrder = order.RowKey.ToString() });
-            }
-            catch
-            {
-                ViewBag.Process = false;
-                return RedirectToAction("Index", "Home", new { result = "false" });
-            }
-        }
-
-        // GET: Order/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: Order/Edit/5
-        [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add update logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: Order/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: Order/Delete/5
-        [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add delete logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
         }
     }
 }

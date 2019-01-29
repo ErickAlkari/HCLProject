@@ -9,6 +9,13 @@ namespace HCL_MiniProject.Controllers
 {
     public class HomeController : Controller
     {
+        /// <summary>
+        /// The params that we read from the URL, are the result of try to upload and save a new request, and if the
+        /// resoult is success then we try to get the id generated for the order.
+        /// This data is sended to the view in the viewbag, and the view validate the content and decide how to show to the user.
+        /// When isnt data in the url the view doesnt show any message.
+        /// </summary>
+        /// <returns>View Home/Index</returns>
         public ActionResult Index()
         {
             ViewBag.Process = Request.Params["result"];
@@ -16,16 +23,18 @@ namespace HCL_MiniProject.Controllers
             return View();
         }
 
+        //Application Description
         public ActionResult About()
         {
-            ViewBag.Message = "Your application description page.";
+            ViewBag.Message = "Application description page.";
 
             return View();
         }
 
+        //Contact Information
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
+            ViewBag.Message = "Contact page.";
 
             return View();
         }
